@@ -1,0 +1,4 @@
+pystray
+pillow
+win10toast
+websockets
