@@ -231,7 +231,7 @@ async def websocket_loop(url: str):
 
                 start_retry_time = None
 
-                async for message in ws:
+                async for message in ws_local:
                     await message_buffer.add_message(message)
 
         except Exception as e:
