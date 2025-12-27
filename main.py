@@ -57,7 +57,11 @@ def get_exe_name():
         # Python スクリプトとして実行されている場合
         return os.path.splitext(os.path.basename(__file__))[0]
 
-LOG_FILENAME = get_exe_name() + ".log"
+# ==============================
+# タイムスタンプ付きログファイル名
+# ==============================
+timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+LOG_FILENAME = f"{get_exe_name()}-{timestamp}.log"
 LOG_PATH = os.path.join(PROGRAM_DIR, LOG_FILENAME)
 
 logging.basicConfig(
