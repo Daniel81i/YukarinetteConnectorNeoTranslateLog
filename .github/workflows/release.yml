@@ -27,7 +27,7 @@ jobs:
     - name: Build EXE
       run: |
         pyinstaller --onefile --noconsole main.py
-        mkdir dist
+        if (!(Test-Path dist)) { mkdir dist }
         copy config.json dist\config.json
 
     - name: Upload artifact
