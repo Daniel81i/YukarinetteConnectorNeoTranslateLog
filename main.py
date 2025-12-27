@@ -297,16 +297,6 @@ def update_tray_status(text):
     if tray_icon:
         tray_icon.title = text
 
-def run_tray():
-    global tray_icon
-    tray_icon = pystray.Icon(
-        "YukarinetteLogger",
-        create_icon_image(),
-        "接続待機中",
-        menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
-    )
-    tray_icon.run()
-
 
 # ==============================
 # メイン
