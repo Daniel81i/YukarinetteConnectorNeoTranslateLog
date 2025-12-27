@@ -15,14 +15,13 @@ YukarinetteLogger は、ゆかりねっとコネクター Neo から送られて
 - MessageID が変わったら前のデータを確定出力
 - 一定時間更新がなければ自動で確定出力
 
-### ✔ ログ出力形式
+### ✔ 翻訳ログ出力形式
 ```
 YYYYMMDD-HH:MM:SSSSS ja:日本語,en:English
 ```
 
-### ✔ exe 名に合わせたログファイル名
+### ✔ アプリケーションログ exe 名に合わせたグファイル名
 - YukarinetteLogger.exe → YukarinetteLogger.log
-- Python スクリプトとして実行した場合は main.log
 
 ### ✔ タスクトレイ常駐
 - WebSocket の状態をツールチップで表示  
@@ -75,13 +74,7 @@ YukarinetteLogger.zip
 
 WebSocket のポート番号はレジストリから取得します。
 
-### ✔ REG_SZ（文字列）の場合
-そのまま URL として使用します。
-```
-ws://127.0.0.1:12345
-```
-
-### ✔ DWORD（数値）の場合
+### ✔ DWORD（数値）
 ポート番号として扱い、以下の URL を自動生成します。
 ```
 ws://127.0.0.1:{PORT}
@@ -118,7 +111,7 @@ copy config.json dist\
 
 ## 📄 ライセンス
 
-MIT License（必要に応じて変更してください）
+MIT License
 
 ---
 
