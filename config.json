@@ -1,0 +1,14 @@
+{
+  "DEBUG": true,
+  "REGISTRY_HIVE": "HKEY_LOCAL_MACHINE",
+  "REGISTRY_PATH": "SOFTWARE\\MyApp",
+  "REGISTRY_VALUE": "WebSocketUrl",
+  "LOG_DIR": "log",
+
+  "PROCESS_ID_KEY": "process_id",
+  "FLUSH_INTERVAL_SEC": 5,
+  "PROCESS_STABLE_SEC": 10,
+
+  "WS_RECONNECT_DELAY_SEC": 5,
+  "WS_MAX_RECONNECT_SEC": 60
+}
