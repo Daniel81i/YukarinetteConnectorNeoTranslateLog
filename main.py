@@ -45,11 +45,25 @@ config = load_config()
 # ==============================
 log_level = logging.DEBUG if config.get("DEBUG", False) else logging.INFO
 
+# ==============================
+# exe 名からログファイル名を決定
+# ==============================
+def get_exe_name():
+    if getattr(sys, 'frozen', False):
+        # PyInstaller で exe 化されている場合
+        return os.path.splitext(os.path.basename(sys.executable))[0]
+    else:
+        # Python スクリプトとして実行されている場合
+        return os.path.splitext(os.path.basename(__file__))[0]
+
+LOG_FILENAME = get_exe_name() + ".log"
+LOG_PATH = os.path.join(PROGRAM_DIR, LOG_FILENAME)
+
 logging.basicConfig(
     level=log_level,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(PROGRAM_DIR, "app.log"), encoding="utf-8"),
+        logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
     ],
 )
