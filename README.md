@@ -53,14 +53,37 @@ YukarinetteLogger.zip
 ### 3. config.json を編集（必要に応じて）
 ```json
 {
+  // デバッグモード（true にするとログが詳細になる）
   "DEBUG": false,
+
+  // WebSocket のポート番号を取得するレジストリのハイブ
+  // 通常は HKEY_CURRENT_USER または HKEY_LOCAL_MACHINE
   "REGISTRY_HIVE": "HKEY_CURRENT_USER",
+
+  // WebSocket のポート番号が保存されているレジストリパス
   "REGISTRY_PATH": "SOFTWARE\\YukarinetteConnectorNeo",
+
+  // レジストリ内の値の名前（DWORD または REG_SZ）
+  // DWORD の場合はポート番号として扱い、URL を自動生成する
   "REGISTRY_VALUE": "WebSocketPort",
+
+  // メッセージログを保存するフォルダ名
+  // アプリの実行フォルダ内に作成される
   "LOG_DIR": "log",
+
+  // 同じ MessageID の更新が止まってから確定保存するまでの秒数
+  // （例：10秒間更新がなければログに書き込む）
   "PROCESS_STABLE_SEC": 10,
+
+  // バッファの定期チェック間隔（秒）
+  // この間隔で「確定してよいか」を確認する
   "FLUSH_INTERVAL_SEC": 5,
+
+  // WebSocket 切断時の再接続までの待機秒数
   "WS_RECONNECT_DELAY_SEC": 5,
+
+  // 再接続を試みる最大時間（秒）
+  // この時間を超えるとアプリは終了する
   "WS_MAX_RECONNECT_SEC": 60
 }
 ```
