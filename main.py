@@ -175,8 +175,6 @@ class MessageBuffer:
         self.current_id = None
         self.last_data = None
         self.last_update_time = None
-
-
 message_buffer = MessageBuffer(
     stable_sec=config.get("PROCESS_STABLE_SEC", 10),
     flush_interval=config.get("FLUSH_INTERVAL_SEC", 5)
@@ -257,25 +255,30 @@ async def main_async():
     if not ws_url:
         notify("終了", "レジストリから WebSocket URL を取得できませんでした")
         return
-# MessageID の一定時間経過チェック
-flush_task = asyncio.create_task(message_buffer.periodic_flush())
 
-# WebSocket のメインループ
-ws_task = asyncio.create_task(websocket_loop(ws_url))
+    # MessageID の一定時間経過チェック
+    flush_task = asyncio.create_task(message_buffer.periodic_flush())
 
-try:
-    await ws_task
-finally: 
-    flush_task.cancel()
+    # WebSocket のメインループ
+    ws_task = asyncio.create_task(websocket_loop(ws_url))
+
     try:
-        await flush_task
-    except asyncio.CancelledError:
-        pass
+        await ws_task
+    finally:
+        flush_task.cancel()
+        try:
+            await flush_task
+        except asyncio.CancelledError:
+            pass
+
 
 def main():
     tray_thread = threading.Thread(target=run_tray, daemon=True)
     tray_thread.start()
-    
+
     asyncio.run(main_async())
+
+
 if __name__ == "__main__":
     main()
+
