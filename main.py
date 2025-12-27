@@ -57,6 +57,8 @@ def get_exe_name():
         # Python スクリプトとして実行されている場合
         return os.path.splitext(os.path.basename(__file__))[0]
 
+APP_NAME = get_exe_name()
+
 # ==============================
 # タイムスタンプ付きログファイル名
 # ==============================
@@ -299,7 +301,7 @@ def run_tray():
 def update_tray_status(text):
     global tray_icon
     if tray_icon:
-        tray_icon.title = text
+        tray_icon.title = f"{APP_NAME}\n{text}"
 
 
 # ==============================
