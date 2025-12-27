@@ -15,19 +15,12 @@ import pystray
 
 
 # ==============================
-# パス関連（実行ディレクトリの扱い）
+# 実行ファイルのあるディレクトリ取得
 # ==============================
-
 def get_program_dir():
-    """
-    実行ファイルが置いてあるフォルダを返す。
-    PyInstaller で exe 化しても、.py 実行でも期待どおりになる。
-    """
     if getattr(sys, 'frozen', False):
-        # PyInstaller などで固めた場合
         return os.path.dirname(os.path.abspath(sys.executable))
     else:
-        # 通常の .py 実行の場合
         return os.path.dirname(os.path.abspath(__file__))
 
 
@@ -35,9 +28,8 @@ PROGRAM_DIR = get_program_dir()
 
 
 # ==============================
-# config 読み込み
+# config.json 読み込み
 # ==============================
-
 def load_config():
     path = os.path.join(PROGRAM_DIR, "config.json")
     with open(path, "r", encoding="utf-8") as f:
@@ -50,31 +42,27 @@ config = load_config()
 # ==============================
 # ログ設定
 # ==============================
-
 log_level = logging.DEBUG if config.get("DEBUG", False) else logging.INFO
 
-log_file_path = os.path.join(PROGRAM_DIR, "app.log")
 logging.basicConfig(
     level=log_level,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(log_file_path, encoding="utf-8"),
+        logging.FileHandler(os.path.join(PROGRAM_DIR, "app.log"), encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
     ],
 )
 
 logging.info("=== Application started ===")
-logging.debug(f"Program directory: {PROGRAM_DIR}")
 
 
 # ==============================
 # Windows 通知
 # ==============================
-
 notifier = ToastNotifier()
 
 
-def notify(title: str, msg: str):
+def notify(title, msg):
     try:
         notifier.show_toast(title, msg, duration=3, threaded=True)
     except Exception as e:
@@ -84,7 +72,6 @@ def notify(title: str, msg: str):
 # ==============================
 # レジストリ読み取り
 # ==============================
-
 HIVE_MAP = {
     "HKEY_LOCAL_MACHINE": winreg.HKEY_LOCAL_MACHINE,
     "HKLM": winreg.HKEY_LOCAL_MACHINE,
@@ -100,8 +87,6 @@ def read_registry_value():
     path = config["REGISTRY_PATH"]
     value_name = config["REGISTRY_VALUE"]
 
-    logging.debug(f"Reading registry: {hive_name}\\{path} ({value_name})")
-
     try:
         key = winreg.OpenKey(hive, path, 0, winreg.KEY_READ)
         value, _ = winreg.QueryValueEx(key, value_name)
@@ -113,137 +98,99 @@ def read_registry_value():
 
 
 # ==============================
-# JSON ログ出力（処理ID管理付き）
+# MessageID ベースのログ確定処理
 # ==============================
-
 LOG_DIR = os.path.join(PROGRAM_DIR, config.get("LOG_DIR", "log"))
 os.makedirs(LOG_DIR, exist_ok=True)
 
-PROCESS_ID_KEY = config.get("PROCESS_ID_KEY", "process_id")
-PROCESS_STABLE_SEC = config.get("PROCESS_STABLE_SEC", 10)
-FLUSH_INTERVAL_SEC = config.get("FLUSH_INTERVAL_SEC", 5)
 
-
-class ProcessBuffer:
-    """
-    同じ処理IDのデータをバッファし、
-    ・処理ID変更時
-    ・一定時間（PROCESS_STABLE_SEC）経過時
-    に最後の1件だけをログ出力する
-    """
-
-    def __init__(self):
+class MessageBuffer:
+    def __init__(self, stable_sec=10, flush_interval=5):
         self.current_id = None
         self.last_data = None
         self.last_update_time = None
+        self.stable_sec = stable_sec
+        self.flush_interval = flush_interval
         self.lock = asyncio.Lock()
 
     async def add_message(self, raw_data: str):
-        """
-        WebSocket から受信した JSON 文字列を処理
-        """
         try:
             data = json.loads(raw_data)
-        except json.JSONDecodeError as e:
-            logging.error(f"JSON decode error: {e} / raw={raw_data}")
+        except json.JSONDecodeError:
+            logging.error(f"JSON decode error: {raw_data}")
             return
 
-        proc_id = data.get(PROCESS_ID_KEY)
-        if proc_id is None:
-            logging.warning(f"PROCESS_ID_KEY '{PROCESS_ID_KEY}' not found in data: {data}")
+        msg_id = data.get("MessageID")
+        if msg_id is None:
+            logging.warning("MessageID が存在しないデータを受信")
             return
 
         async with self.lock:
             now = time.time()
 
             if self.current_id is None:
-                # 初回
-                self.current_id = proc_id
+                self.current_id = msg_id
                 self.last_data = data
                 self.last_update_time = now
-                logging.debug(f"New process_id={proc_id} started")
                 return
 
-            if proc_id != self.current_id:
-                # 別の処理IDが来た → 直前の処理IDの最後のデータを確定出力
-                logging.debug(f"Process_id changed: {self.current_id} -> {proc_id}")
+            if msg_id != self.current_id:
                 await self._flush_locked()
-                # 新しい処理IDとしてセット
-                self.current_id = proc_id
+                self.current_id = msg_id
                 self.last_data = data
                 self.last_update_time = now
             else:
-                # 同じ処理ID → データを上書き（最後の1件を覚える）
                 self.last_data = data
                 self.last_update_time = now
-                logging.debug(f"Updated data for process_id={proc_id}")
 
     async def periodic_flush(self):
-        """
-        一定間隔で呼び出して、
-        「一定時間更新がない処理ID」を確定として出力する
-        """
         while True:
-            try:
-                await asyncio.sleep(FLUSH_INTERVAL_SEC)
-                async with self.lock:
-                    if self.current_id is None or self.last_update_time is None:
-                        continue
-                    now = time.time()
-                    if now - self.last_update_time >= PROCESS_STABLE_SEC:
-                        logging.debug(
-                            f"Process_id={self.current_id} became stable "
-                            f"({now - self.last_update_time:.1f}s >= {PROCESS_STABLE_SEC}s)"
-                        )
-                        await self._flush_locked()
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logging.error(f"periodic_flush error: {e}")
+            await asyncio.sleep(self.flush_interval)
+            async with self.lock:
+                if self.current_id is None:
+                    continue
+                now = time.time()
+                if now - self.last_update_time >= self.stable_sec:
+                    await self._flush_locked()
 
     async def _flush_locked(self):
-        """
-        現在の last_data をログ出力して、バッファをクリア
-        呼び出し元で lock を取っている前提
-        """
-        if self.current_id is None or self.last_data is None:
+        if self.last_data is None:
             return
 
-        # ファイル名: timestamp_processid.json
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        safe_id = str(self.current_id).replace(os.sep, "_")
-        filename = f"{timestamp}_{safe_id}.json"
-        path = os.path.join(LOG_DIR, filename)
+        timestamp = datetime.now().strftime("%Y%m%d-%H:%M:%S%f")[:-3]
 
+        ja = self.last_data.get("textList", {}).get("ja", "")
+        en = self.last_data.get("textList", {}).get("en", "")
+
+        line = f"{timestamp} ja:{ja},en:{en}"
+
+        log_path = os.path.join(LOG_DIR, "message.log")
         try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(self.last_data, f, ensure_ascii=False, indent=2)
-            logging.info(f"Saved JSON: {path}")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(line + "\n")
+            logging.info(f"Message logged: {line}")
         except Exception as e:
-            logging.error(f"JSON save error: {e}")
+            logging.error(f"Log write error: {e}")
 
-        # クリア
         self.current_id = None
         self.last_data = None
         self.last_update_time = None
 
 
-process_buffer = ProcessBuffer()
+message_buffer = MessageBuffer(
+    stable_sec=config.get("PROCESS_STABLE_SEC", 10),
+    flush_interval=config.get("FLUSH_INTERVAL_SEC", 5)
+)
 
 
 # ==============================
-# WebSocket 受信 + 再接続ロジック
+# WebSocket 受信 + 再接続
 # ==============================
-
 WS_RECONNECT_DELAY_SEC = config.get("WS_RECONNECT_DELAY_SEC", 5)
 WS_MAX_RECONNECT_SEC = config.get("WS_MAX_RECONNECT_SEC", 60)
 
 
 async def websocket_loop(url: str):
-    """
-    WebSocket に接続し、切断されたらリトライ。
-    一定時間再接続できなければアプリ終了。
-    """
     notify("起動", "アプリケーションを起動しました")
 
     start_retry_time = None
@@ -255,42 +202,30 @@ async def websocket_loop(url: str):
                 notify("データ受信準備完了", "WebSocket 接続が確立しました")
                 logging.info("WebSocket connected")
 
-                # 再接続タイマをリセット
                 start_retry_time = None
 
-                # メイン受信ループ
                 async for message in ws:
-                    logging.debug(f"Received: {message}")
-                    await process_buffer.add_message(message)
-
-        except asyncio.CancelledError:
-            logging.info("WebSocket loop cancelled")
-            break
+                    await message_buffer.add_message(message)
 
         except Exception as e:
             logging.error(f"WebSocket error/disconnected: {e}")
 
-            # 初回切断時刻を記録
             if start_retry_time is None:
                 start_retry_time = time.time()
 
             elapsed = time.time() - start_retry_time
             if elapsed >= WS_MAX_RECONNECT_SEC:
-                logging.error("WebSocket reconnect timeout exceeded. Exiting.")
                 notify("終了", "WebSocket 再接続に失敗したため終了します")
-                # 残っているデータを確定出力しておきたいならここで flush を呼ぶ
-                async with process_buffer.lock:
-                    await process_buffer._flush_locked()
+                async with message_buffer.lock:
+                    await message_buffer._flush_locked()
                 os._exit(1)
 
-            logging.info(f"Retrying WebSocket in {WS_RECONNECT_DELAY_SEC} sec...")
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
 
 
 # ==============================
-# タスクトレイアイコン
+# タスクトレイ
 # ==============================
-
 def create_icon_image():
     img = Image.new("RGB", (16, 16), "blue")
     d = ImageDraw.Draw(img)
@@ -309,9 +244,7 @@ def run_tray():
         "MyTrayApp",
         create_icon_image(),
         "My Python Tray App",
-        menu=pystray.Menu(
-            pystray.MenuItem("Exit", on_exit),
-        ),
+        menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
     )
     icon.run()
 
@@ -319,44 +252,7 @@ def run_tray():
 # ==============================
 # メイン
 # ==============================
-
 async def main_async():
-    # レジストリから WebSocket URL を取得
     ws_url = read_registry_value()
     if not ws_url:
-        logging.error("WebSocket URL がレジストリから取得できませんでした。終了します。")
-        notify("終了", "設定取得エラーのため終了します")
-        return
-
-    # 処理IDの「一定時間経過による確定出力」タスク
-    flush_task = asyncio.create_task(process_buffer.periodic_flush())
-    ws_task = asyncio.create_task(websocket_loop(ws_url))
-
-    try:
-        await ws_task
-    finally:
-        flush_task.cancel()
-        try:
-            await flush_task
-        except asyncio.CancelledError:
-            pass
-        logging.info("main_async finished")
-
-
-def main():
-    # タスクトレイを別スレッドで起動
-    tray_thread = threading.Thread(target=run_tray, daemon=True)
-    tray_thread.start()
-
-    # asyncio メインループ
-    try:
-        asyncio.run(main_async())
-    except KeyboardInterrupt:
-        logging.info("KeyboardInterrupt - exiting")
-    finally:
-        notify("終了", "アプリケーションを終了します")
-        logging.info("=== Application exited ===")
-
-
-if __name__ == "__main__":
-    main()
+        notify("終了", "レジストリから Web
