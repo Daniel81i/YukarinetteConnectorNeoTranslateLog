@@ -257,3 +257,25 @@ async def main_async():
     if not ws_url:
         notify("終了", "レジストリから WebSocket URL を取得できませんでした")
         return
+# MessageID の一定時間経過チェック
+flush_task = asyncio.create_task(message_buffer.periodic_flush())
+
+# WebSocket のメインループ
+ws_task = asyncio.create_task(websocket_loop(ws_url))
+
+try:
+    await ws_task
+finally: 
+    flush_task.cancel()
+    try:
+        await flush_task
+    except asyncio.CancelledError:
+        pass
+
+def main():
+    tray_thread = threading.Thread(target=run_tray, daemon=True)
+    tray_thread.start()
+    
+    asyncio.run(main_async())
+if __name__ == "__main__":
+    main()
