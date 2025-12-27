@@ -255,4 +255,5 @@ def run_tray():
 async def main_async():
     ws_url = read_registry_value()
     if not ws_url:
-        notify("終了", "レジストリから Web
+        notify("終了", "レジストリから WebSocket URL を取得できませんでした")
+        return
