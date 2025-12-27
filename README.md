@@ -87,6 +87,19 @@ YukarinetteLogger.zip
   "WS_MAX_RECONNECT_SEC": 60
 }
 ```
+### config.json の各項目について
+
+| 項目名 | 説明 |
+|--------|------|
+| `DEBUG` | デバッグモード。true にするとログが詳細になる。 |
+| `REGISTRY_HIVE` | WebSocket のポート番号を取得するレジストリのハイブ。通常は `HKEY_CURRENT_USER`。 |
+| `REGISTRY_PATH` | WebSocket のポート番号が保存されているレジストリパス。 |
+| `REGISTRY_VALUE` | レジストリ内の値の名前。DWORD の場合はポート番号として扱う。 |
+| `LOG_DIR` | メッセージログを保存するフォルダ名。アプリの実行フォルダ内に作成される。 |
+| `PROCESS_STABLE_SEC` | 同じ MessageID の更新が止まってから確定保存するまでの秒数。 |
+| `FLUSH_INTERVAL_SEC` | バッファの定期チェック間隔（秒）。 |
+| `WS_RECONNECT_DELAY_SEC` | WebSocket 切断時の再接続までの待機秒数。 |
+| `WS_MAX_RECONNECT_SEC` | 再接続を試みる最大時間（秒）。超えるとアプリは終了する。 |
 
 ### 4. YukarinetteLogger.exe を起動  
 タスクトレイにアイコンが表示されます。
