@@ -14,6 +14,7 @@ from win10toast import ToastNotifier
 import pystray
 
 tray_icon = None
+ws = None
 
 # ==============================
 # 実行ファイルのあるディレクトリ取得
@@ -204,6 +205,7 @@ WS_MAX_RECONNECT_SEC = config.get("WS_MAX_RECONNECT_SEC", 60)
 
 async def websocket_loop(url: str):
     notify("起動", "アプリケーションを起動しました")
+    global ws
 
     # URL からポート番号を抽出
     try:
@@ -220,7 +222,8 @@ async def websocket_loop(url: str):
             logging.info(f"Connecting WebSocket: {url}")
             update_tray_status(f"接続中… (Port: {port})")
 
-            async with websockets.connect(url) as ws:
+            async with websockets.connect(url) as ws_local:
+                ws = ws_local
                 notify("データ受信準備完了", "WebSocket 接続が確立しました")
                 logging.info("WebSocket connected")
 
