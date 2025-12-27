@@ -248,6 +248,15 @@ async def websocket_loop(url: str):
 
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
 
+async def close_websocket():
+    global ws
+    try:
+        if ws:
+            await ws.close()
+            logging.info("WebSocket closed.")
+    except Exception as e:
+        logging.error(f"Error closing WebSocket: {e}")
+
 
 # ==============================
 # タスクトレイ
@@ -260,6 +269,11 @@ def create_icon_image():
 
 def on_exit(icon, item):
     notify("終了", "アプリケーションを終了します")
+
+    # WebSocket を閉じる（非同期タスクとして実行）
+    loop = asyncio.get_event_loop()
+    loop.create_task(close_websocket())
+
     icon.stop()
     os._exit(0)
 
