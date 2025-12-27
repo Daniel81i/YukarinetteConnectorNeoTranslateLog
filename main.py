@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 from win10toast import ToastNotifier
 import pystray
 
+tray_icon = None
 
 # ==============================
 # 実行ファイルのあるディレクトリ取得
@@ -187,18 +188,29 @@ message_buffer = MessageBuffer(
 WS_RECONNECT_DELAY_SEC = config.get("WS_RECONNECT_DELAY_SEC", 5)
 WS_MAX_RECONNECT_SEC = config.get("WS_MAX_RECONNECT_SEC", 60)
 
-
 async def websocket_loop(url: str):
     notify("起動", "アプリケーションを起動しました")
+
+    # URL からポート番号を抽出
+    try:
+        port = url.split(":")[-1]
+    except:
+        port = "?"
+
+    update_tray_status(f"接続待機中 (Port: {port})")
 
     start_retry_time = None
 
     while True:
         try:
             logging.info(f"Connecting WebSocket: {url}")
+            update_tray_status(f"接続中… (Port: {port})")
+
             async with websockets.connect(url) as ws:
                 notify("データ受信準備完了", "WebSocket 接続が確立しました")
                 logging.info("WebSocket connected")
+
+                update_tray_status(f"受信中 (Port: {port})")
 
                 start_retry_time = None
 
@@ -207,19 +219,20 @@ async def websocket_loop(url: str):
 
         except Exception as e:
             logging.error(f"WebSocket error/disconnected: {e}")
+            update_tray_status(f"再接続中… (Port: {port})")
 
             if start_retry_time is None:
                 start_retry_time = time.time()
 
             elapsed = time.time() - start_retry_time
             if elapsed >= WS_MAX_RECONNECT_SEC:
+                update_tray_status("切断")
                 notify("終了", "WebSocket 再接続に失敗したため終了します")
                 async with message_buffer.lock:
                     await message_buffer._flush_locked()
                 os._exit(1)
 
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
-
 
 # ==============================
 # タスクトレイ
@@ -239,13 +252,27 @@ def on_exit(icon, item):
 
 def run_tray():
     icon = pystray.Icon(
-        "MyTrayApp",
+        "YukarinetteLogger",
         create_icon_image(),
         "My Python Tray App",
         menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
     )
     icon.run()
 
+def update_tray_status(text):
+    global tray_icon
+    if tray_icon:
+        tray_icon.title = text
+
+def run_tray():
+    global tray_icon
+    tray_icon = pystray.Icon(
+        "YukarinetteLogger",
+        create_icon_image(),
+        "接続待機中",
+        menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
+    )
+    tray_icon.run()
 
 # ==============================
 # メイン
