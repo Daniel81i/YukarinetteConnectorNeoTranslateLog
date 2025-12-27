@@ -234,6 +234,7 @@ async def websocket_loop(url: str):
 
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
 
+
 # ==============================
 # タスクトレイ
 # ==============================
@@ -243,21 +244,22 @@ def create_icon_image():
     d.rectangle([4, 4, 12, 12], fill="white")
     return img
 
-
 def on_exit(icon, item):
     notify("終了", "アプリケーションを終了します")
     icon.stop()
     os._exit(0)
 
-
 def run_tray():
-    icon = pystray.Icon(
+    global tray_icon
+    tray_icon = pystray.Icon(
         "YukarinetteLogger",
         create_icon_image(),
-        "My Python Tray App",
-        menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
+        "接続待機中",
+        menu=pystray.Menu(
+            pystray.MenuItem("Exit（終了）", on_exit)
+        ),
     )
-    icon.run()
+    tray_icon.run()
 
 def update_tray_status(text):
     global tray_icon
@@ -273,6 +275,7 @@ def run_tray():
         menu=pystray.Menu(pystray.MenuItem("Exit", on_exit)),
     )
     tray_icon.run()
+
 
 # ==============================
 # メイン
@@ -298,7 +301,6 @@ async def main_async():
         except asyncio.CancelledError:
             pass
 
-
 def main():
     tray_thread = threading.Thread(target=run_tray, daemon=True)
     tray_thread.start()
@@ -308,4 +310,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
