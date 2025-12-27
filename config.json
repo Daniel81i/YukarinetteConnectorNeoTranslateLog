@@ -1,11 +1,10 @@
 {
   "DEBUG": true,
-  "REGISTRY_HIVE": "HKEY_LOCAL_MACHINE",
-  "REGISTRY_PATH": "SOFTWARE\\MyApp",
-  "REGISTRY_VALUE": "WebSocketUrl",
+  "REGISTRY_HIVE": "HKEY_CURRENT_USER",
+  "REGISTRY_PATH": "Software\\YukarinetteConnectorNeo",
+  "REGISTRY_VALUE": "WebSocket",
   "LOG_DIR": "log",
 
-  "PROCESS_ID_KEY": "process_id",
   "FLUSH_INTERVAL_SEC": 5,
   "PROCESS_STABLE_SEC": 10,
 
