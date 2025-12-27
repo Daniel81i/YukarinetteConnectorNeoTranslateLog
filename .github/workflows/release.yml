@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Copy config.json
+      run: |
+        mkdir dist
+        copy config.json dist\config.json
+
+    - name: Build EXE
+      run: |
+        pyinstaller --onefile --noconsole main.py
+        copy config.json dist\config.json
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: myapp-exe
+        path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: myapp-exe
+        path: release_files
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release_files/**
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
