@@ -281,10 +281,17 @@ def run_tray():
 # メイン
 # ==============================
 async def main_async():
-    ws_url = read_registry_value()
-    if not ws_url:
-        notify("終了", "レジストリから WebSocket URL を取得できませんでした")
+    value = read_registry_value()
+
+    if value is None:
+        notify("終了", "レジストリから WebSocket の値を取得できませんでした")
         return
+
+    # DWORD の場合（int）→ URL を組み立てる
+    if isinstance(value, int):
+        ws_url = f"ws://127.0.0.1:{value}"
+    else:
+        ws_url = value
 
     # MessageID の一定時間経過チェック
     flush_task = asyncio.create_task(message_buffer.periodic_flush())
