@@ -8,14 +8,14 @@ YukarinetteLogger は、ゆかりねっとコネクター Neo から送られて
 
 ### ✔ WebSocket 受信
 - ゆかりねっとコネクター Neo からの翻訳データを WebSocket で受信
-- レジストリから WebSocket のポート番号を自動取得（DWORD の場合は `ws://127.0.0.1:PORT` として組み立て）
+- ゆかりねっとコネクター Neoの仕様に従いレジストリから WebSocket のポート番号を自動取得（DWORD の場合は `ws://127.0.0.1:PORT` として組み立て）
 
 ### ✔ MessageID ベースのログ確定処理
 - 同じ MessageID のデータは上書きし、最後の1件だけをログに保存
 - MessageID が変わったら前のデータを確定出力
 - 一定時間更新がなければ自動で確定出力
 
-### ✔ 翻訳ログ出力形式
+### ✔ 翻訳ログ出力形式（例）
 ```
 YYYYMMDD-HH:MM:SSSSS ja:日本語,en:English
 ```
@@ -72,7 +72,8 @@ YukarinetteLogger.zip
 
 ## 📝 レジストリ設定について
 
-WebSocket のポート番号はレジストリから取得します。
+ゆかりねっとコネクター Neoの仕様に従いWebSocket のポート番号はレジストリから取得します。
+HKCU\Software\YukarinetteConnectorNeo\WebSocket
 
 ### ✔ DWORD（数値）
 ポート番号として扱い、以下の URL を自動生成します。
