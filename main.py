@@ -12,6 +12,7 @@ import websockets
 from PIL import Image, ImageDraw
 from win10toast import ToastNotifier
 import pystray
+import psutil
 
 tray_icon = None
 ws = None
@@ -256,10 +257,6 @@ async def websocket_loop(url: str):
             elapsed = time.time() - start_retry_time
             if elapsed >= WS_MAX_RECONNECT_SEC:
                 update_tray_status("切断")
-                notify("終了", "WebSocket 再接続に失敗したため終了します")
-                async with message_buffer.lock:
-                    await message_buffer._flush_locked()
-                os._exit(1)
 
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
 
@@ -283,14 +280,11 @@ def create_icon_image():
     return img
 
 def on_exit(icon, item):
-    notify("終了", "アプリケーションを終了します")
 
     # WebSocket を閉じる（非同期タスクとして実行）
     loop = asyncio.get_event_loop()
-    loop.create_task(close_websocket())
-
+    loop.create_task(safe_exit("user exit", 0))
     icon.stop()
-    os._exit(0)
 
 def run_tray():
     global tray_icon
@@ -311,6 +305,49 @@ def update_tray_status(text):
 
 
 # ==============================
+# プロセス監視
+# ==============================
+async def process_monitor_loop():
+    target = config.get("TARGET_PROCESS", "YNC_Neo.exe").lower()
+
+    while True:
+        found = False
+        for p in psutil.process_iter(["name"]):
+            try:
+                if p.info["name"] and p.info["name"].lower() == target:
+                    found = True
+                    break
+            except psutil.NoSuchProcess:
+                pass
+
+        if not found:
+            await safe_exit("target process not found", 1)
+
+        await asyncio.sleep(10)
+
+
+# ==============================
+# 終了処理
+# ==============================
+async def safe_exit(reason: str, code: int = 0):
+    logging.info(f"Exit reason: {reason}")
+
+    # WebSocket を閉じる
+    try:
+        await close_websocket()
+    except:
+        pass
+
+    # メッセージバッファ flush
+    async with message_buffer.lock:
+        await message_buffer._flush_locked()
+
+    notify("終了", f"アプリケーションを終了します ({reason})")
+
+    os._exit(code)
+
+
+# ==============================
 # メイン
 # ==============================
 async def main_async():
@@ -320,24 +357,23 @@ async def main_async():
         notify("終了", "レジストリから WebSocket の値を取得できませんでした")
         return
 
-    # DWORD の場合（int）→ URL を組み立てる
     if isinstance(value, int):
         ws_url = f"ws://127.0.0.1:{value}"
     else:
         ws_url = value
 
-    # MessageID の一定時間経過チェック
     flush_task = asyncio.create_task(message_buffer.periodic_flush())
-
-    # WebSocket のメインループ
     ws_task = asyncio.create_task(websocket_loop(ws_url))
+    proc_task = asyncio.create_task(process_monitor_loop())  # ← 追加
 
     try:
         await ws_task
     finally:
         flush_task.cancel()
+        proc_task.cancel()
         try:
             await flush_task
+            await proc_task
         except asyncio.CancelledError:
             pass
 
