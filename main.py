@@ -138,6 +138,9 @@ class MessageBuffer:
     async def add_message(self, raw_data: str):
         try:
             data = json.loads(raw_data)
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                logging.debug(f"[WS RECV JSON] {data}")
+        
         except json.JSONDecodeError:
             logging.error(f"JSON decode error: {raw_data}")
             return
@@ -238,6 +241,9 @@ async def websocket_loop(url: str):
                 start_retry_time = None
 
                 async for message in ws_local:
+                    if logging.getLogger().isEnabledFor(logging.DEBUG):
+                        logging.debug(f"[WS RECV RAW] {message}")
+
                     await message_buffer.add_message(message)
 
         except Exception as e:
