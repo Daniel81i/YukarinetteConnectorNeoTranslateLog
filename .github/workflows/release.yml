@@ -27,16 +27,16 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    # ▼▼▼ ここを追加：version.txt を自動生成 ▼▼▼
+    # ▼▼▼ version.txt を PowerShell で生成 ▼▼▼
     - name: Generate version file
-      shell: bash
+      shell: pwsh
       run: |
-        APP_NAME="${{ github.event.repository.name }}"
-        PY_VER=$(python -c "import platform; print(platform.python_version())")
-        TAG="${{ github.ref_name }}"
-        BUILD_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+        $APP_NAME="${{ github.event.repository.name }}"
+        $PY_VER = python -c "import platform; print(platform.python_version())"
+        $TAG="${{ github.ref_name }}"
+        $BUILD_TIME = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-        cat <<EOF > version.txt
+        @"
 VSVersionInfo(
   ffi=FixedFileInfo(
     filevers=(1, 0, 0, 0),
@@ -53,19 +53,19 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [
-          StringStruct('CompanyName', '${APP_NAME}'),
-          StringStruct('FileDescription', '${APP_NAME}'),
-          StringStruct('FileVersion', '${TAG}'),
-          StringStruct('ProductVersion', '${TAG}'),
-          StringStruct('Comments', 'Python ${PY_VER} / Build ${BUILD_TIME}'),
+          StringStruct('CompanyName', '$APP_NAME'),
+          StringStruct('FileDescription', '$APP_NAME'),
+          StringStruct('FileVersion', '$TAG'),
+          StringStruct('ProductVersion', '$TAG'),
+          StringStruct('Comments', 'Python $PY_VER / Build $BUILD_TIME'),
         ]
       )
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
 )
-EOF
-    # ▲▲▲ ここまで追加 ▲▲▲
+"@ | Out-File version.txt -Encoding utf8
+    # ▲▲▲ version.txt 生成ここまで ▲▲▲
 
     - name: Build EXE
       run: |
