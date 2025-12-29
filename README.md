@@ -37,6 +37,10 @@ YYYYMMDD-HH:MM:SSSSS ja:日本語,en:English
 - WebSocket 接続成功時  
 - 再接続失敗時  
 
+### ✔ 終了検知
+- WebSocket 切断  
+- 監視プロセスが存在しない場合  
+
 ---
 
 ## 📦 インストール方法
