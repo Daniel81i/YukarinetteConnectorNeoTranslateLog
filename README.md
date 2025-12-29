@@ -84,7 +84,10 @@ YukarinetteLogger.zip
 
   // 再接続を試みる最大時間（秒）
   // この時間を超えるとアプリは終了する
-  "WS_MAX_RECONNECT_SEC": 60
+  "WS_MAX_RECONNECT_SEC": 60,
+
+  // 監視プロセス名
+  "TARGET_PROCESS": "YNC_Neo.exe"
 }
 ```
 ### config.json の各項目について
@@ -100,6 +103,8 @@ YukarinetteLogger.zip
 | `FLUSH_INTERVAL_SEC` | バッファの定期チェック間隔（秒）。 |
 | `WS_RECONNECT_DELAY_SEC` | WebSocket 切断時の再接続までの待機秒数。 |
 | `WS_MAX_RECONNECT_SEC` | 再接続を試みる最大時間（秒）。超えるとアプリは終了する。 |
+| `TARGET_PROCESS` | 監視プロセス名。 |
+
 
 ### 4. YukarinetteLogger.exe を起動  
 タスクトレイにアイコンが表示されます。
