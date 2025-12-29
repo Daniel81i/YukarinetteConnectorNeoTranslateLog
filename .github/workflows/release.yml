@@ -35,35 +35,33 @@ jobs:
           $TAG="${{ github.ref_name }}"
           $BUILD_TIME = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          @"
-VSVersionInfo(
-  ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 0),
-    prodvers=(1, 0, 0, 0),
-    mask=0x3f,
-    flags=0x0,
-    OS=0x40004,
-    fileType=0x1,
-    subtype=0x0,
-    date=(0, 0)
-  ),
-  kids=[
-    StringFileInfo([
-      StringTable(
-        '040904B0',
-        [
-          StringStruct('CompanyName', '$APP_NAME'),
-          StringStruct('FileDescription', '$APP_NAME'),
-          StringStruct('FileVersion', '$TAG'),
-          StringStruct('ProductVersion', '$TAG'),
-          StringStruct('Comments', 'Python $PY_VER / Build $BUILD_TIME'),
-        ]
-      )
-    ]),
-    VarFileInfo([VarStruct('Translation', [1033, 1200])])
-  ]
-)
-"@ | Out-File version.txt -Encoding utf8
+          Set-Content version.txt "VSVersionInfo("
+          Add-Content version.txt "  ffi=FixedFileInfo("
+          Add-Content version.txt "    filevers=(1, 0, 0, 0),"
+          Add-Content version.txt "    prodvers=(1, 0, 0, 0),"
+          Add-Content version.txt "    mask=0x3f,"
+          Add-Content version.txt "    flags=0x0,"
+          Add-Content version.txt "    OS=0x40004,"
+          Add-Content version.txt "    fileType=0x1,"
+          Add-Content version.txt "    subtype=0x0,"
+          Add-Content version.txt "    date=(0, 0)"
+          Add-Content version.txt "  ),"
+          Add-Content version.txt "  kids=["
+          Add-Content version.txt "    StringFileInfo(["
+          Add-Content version.txt "      StringTable("
+          Add-Content version.txt "        '040904B0',"
+          Add-Content version.txt "        ["
+          Add-Content version.txt "          StringStruct('CompanyName', '$APP_NAME'),"
+          Add-Content version.txt "          StringStruct('FileDescription', '$APP_NAME'),"
+          Add-Content version.txt "          StringStruct('FileVersion', '$TAG'),"
+          Add-Content version.txt "          StringStruct('ProductVersion', '$TAG'),"
+          Add-Content version.txt "          StringStruct('Comments', 'Python $PY_VER / Build $BUILD_TIME'),"
+          Add-Content version.txt "        ]"
+          Add-Content version.txt "      )"
+          Add-Content version.txt "    ]),"
+          Add-Content version.txt "    VarFileInfo([VarStruct('Translation', [1033, 1200])])"
+          Add-Content version.txt "  ]"
+          Add-Content version.txt ")"
 
       - name: Build EXE
         run: |
