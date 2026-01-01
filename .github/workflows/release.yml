@@ -90,21 +90,17 @@ jobs:
           $ico = Join-Path $root "icon.ico"
 
           if (!(Test-Path $png)) {
-            Write-Error "icon.png が見つかりません。リポジトリのルートに icon.png を置いてください。"
+            Write-Error "icon.png が見つかりません。"
             exit 1
           }
 
-          # Python スクリプトとして実行（PowerShell のクォート問題を完全回避）
-          @"
-from PIL import Image
-import sys
-
-png = sys.argv[1]
-ico = sys.argv[2]
-
-img = Image.open(png)
-img.save(ico, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])
-"@ | Out-File convert_icon.py -Encoding UTF8
+          # convert_icon.py を安全に生成
+          Set-Content convert_icon.py "from PIL import Image"
+          Add-Content convert_icon.py "import sys"
+          Add-Content convert_icon.py "png = sys.argv[1]"
+          Add-Content convert_icon.py "ico = sys.argv[2]"
+          Add-Content convert_icon.py "img = Image.open(png)"
+          Add-Content convert_icon.py "img.save(ico, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
 
           python convert_icon.py "$png" "$ico"
 
