@@ -126,6 +126,8 @@ def read_registry_value():
 # ==============================
 LOG_DIR = os.path.join(PROGRAM_DIR, config.get("LOG_DIR", "log"))
 os.makedirs(LOG_DIR, exist_ok=True)
+translation_timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+TRANSLATION_LOG_FILENAME = f"translation-{translation_timestamp}.log"
 
 
 class MessageBuffer:
@@ -193,7 +195,7 @@ class MessageBuffer:
 
         line = f"{timestamp},{lang1}:{text1},{lang2}:{text2}"
 
-        log_path = os.path.join(LOG_DIR, "message.log")
+        log_path = os.path.join(LOG_DIR, TRANSLATION_LOG_FILENAME)
         try:
             with open(log_path, "a", encoding="utf-8") as f:
                 f.write(line + "\n")
