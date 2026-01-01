@@ -9,6 +9,13 @@ from datetime import datetime
 
 import winreg
 import websockets
+import websockets.client
+import websockets.server
+import websockets.legacy
+import websockets.legacy.client
+import websockets.legacy.server
+import websockets.protocol
+import websockets.uri
 from PIL import Image, ImageDraw
 from win10toast import ToastNotifier
 import pystray
