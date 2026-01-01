@@ -75,6 +75,12 @@ jobs:
       - name: Build EXE
         shell: pwsh
         run: |
+          Write-Host "=== Ensure Pillow Installed ==="
+          pip install pillow
+
+          Write-Host "=== Remove auto-generated spec ==="
+          Remove-Item *.spec -Force -ErrorAction SilentlyContinue
+
           Write-Host "=== Generate icon.ico ==="
 
           $root = $env:GITHUB_WORKSPACE
@@ -83,24 +89,29 @@ jobs:
           $png = Join-Path $root "icon.png"
           $ico = Join-Path $root "icon.ico"
 
-          python -c "from PIL import Image; img = Image.open(r'$png'); img.save(r'$ico', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+          if (!(Test-Path $png)) {
+            Write-Error "icon.png が見つかりません。リポジトリのルートに icon.png を置いてください。"
+            exit 1
+          }
 
-          Write-Host "=== Generate spec file ==="
+          # PowerShell で変数展開される正しい Python コマンド
+          python -c "from PIL import Image; img = Image.open(r\"$png\"); img.save(r\"$ico\", sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+
+          if (!(Test-Path $ico)) {
+            Write-Error "icon.ico の生成に失敗しました"
+            exit 1
+          }
+
+          Write-Host "icon.ico created at $ico"
+
+          Write-Host "=== PyInstaller Build ==="
 
           pyinstaller `
             --onefile `
             --noconsole `
-            --icon "$ico" `
             --name "YukarinetteLogger" `
-            --specpath "$root" `
-            --log-level WARN `
-            --clean `
-            --noconfirm `
+            --icon "$ico" `
             "$root\main.py"
-
-          Write-Host "=== Build using generated spec ==="
-
-          pyinstaller "$root\YukarinetteLogger.spec" --clean --noconfirm
 
           Write-Host "=== Copy config.json ==="
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
