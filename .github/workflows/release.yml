@@ -65,7 +65,13 @@ jobs:
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --noconsole --name YukarinetteLogger --version-file version.txt main.py
+          rem icon.png -> icon.ico を作成
+          python -c "from PIL import Image; img = Image.open('icon.png'); img.save('icon.ico', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+
+          rem アイコン付きでビルド
+          pyinstaller --onefile --noconsole --name YukarinetteLogger --icon icon.ico --version-file version.txt main.py
+
+          rem 設定ファイルを EXE と一緒に配置
           copy config.json dist\config.json
 
       - name: Create ZIP
