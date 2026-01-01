@@ -1,5 +1,5 @@
 {
-  "DEBUG": true,
+  "DEBUG": false,
   "REGISTRY_HIVE": "HKEY_CURRENT_USER",
   "REGISTRY_PATH": "Software\\YukarinetteConnectorNeo",
   "REGISTRY_VALUE": "WebSocket",
