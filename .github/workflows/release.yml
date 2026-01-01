@@ -67,6 +67,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "=== Generate icon.ico ==="
+
           $root = $env:GITHUB_WORKSPACE
           Set-Location $root
 
@@ -76,11 +77,11 @@ jobs:
           $env:PNG = $png
           $env:ICO = $ico
 
-          python -c "from PIL import Image; import os; img = Image.open(os.environ['PNG']); img.save(os.environ['ICO'], sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+          python -c "from PIL import Image; import os; img=Image.open(os.environ['PNG']); img.save(os.environ['ICO'], sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
 
           Write-Host "icon.ico created at $ico"
 
-          Write-Host '=== PyInstaller Build (no .spec) ==='
+          Write-Host "=== PyInstaller Build ==="
           pyinstaller --onefile --noconsole --name YukarinetteLogger --icon "$ico" --version-file version.txt main.py
 
           Write-Host "=== Copy config.json ==="
