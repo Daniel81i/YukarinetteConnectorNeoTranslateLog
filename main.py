@@ -279,9 +279,9 @@ async def close_websocket():
 # タスクトレイ
 # ==============================
 def create_icon_image():
-    img = Image.new("RGB", (16, 16), "blue")
-    d = ImageDraw.Draw(img)
-    d.rectangle([4, 4, 12, 12], fill="white")
+    icon_path = os.path.join(PROGRAM_DIR, "icon.png")
+    img = Image.open(icon_path)
+    img = img.resize((16, 16), Image.LANCZOS)
     return img
 
 def on_exit(icon, item):
