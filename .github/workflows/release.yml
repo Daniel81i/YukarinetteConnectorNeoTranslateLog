@@ -94,8 +94,19 @@ jobs:
             exit 1
           }
 
-          # PowerShell で変数展開される正しい Python コマンド
-          python -c "from PIL import Image; img = Image.open(r\"$png\"); img.save(r\"$ico\", sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
+          # Python スクリプトとして実行（PowerShell のクォート問題を完全回避）
+          @"
+from PIL import Image
+import sys
+
+png = sys.argv[1]
+ico = sys.argv[2]
+
+img = Image.open(png)
+img.save(ico, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])
+"@ | Out-File convert_icon.py -Encoding UTF8
+
+          python convert_icon.py "$png" "$ico"
 
           if (!(Test-Path $ico)) {
             Write-Error "icon.ico の生成に失敗しました"
@@ -115,10 +126,6 @@ jobs:
 
           Write-Host "=== Copy config.json ==="
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
-  
-      - name: Create ZIP
-        run: |
-          Compress-Archive -Path dist\YukarinetteLogger.exe, dist\config.json -DestinationPath dist\YukarinetteLogger.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
