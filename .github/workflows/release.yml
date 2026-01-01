@@ -101,7 +101,7 @@ jobs:
 
           Write-Host "=== PyInstaller Build ==="
 
-          pyinstaller --onefile --noconsole --name "YukarinetteLogger" --icon "$ico" "$root\main.py" --log-level DEBUG
+          pyinstaller --onefile --noconsole --name "YukarinetteLogger" --icon "$ico" --hidden-import websockets "$root\main.py" --log-level DEBUG
 
           Write-Host "=== PyInstaller finished with exit code $LASTEXITCODE ==="
 
