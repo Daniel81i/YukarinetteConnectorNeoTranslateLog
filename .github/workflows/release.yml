@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller pillow
+          pip install pyinstaller
 
       - name: Generate version file
         shell: pwsh
@@ -64,55 +64,13 @@ jobs:
           Add-Content version.txt ")"
 
       - name: Build EXE
-        shell: pwsh
         run: |
-          Write-Host "=== Remove auto-generated spec ==="
-          Remove-Item *.spec -Force -ErrorAction SilentlyContinue
+          pyinstaller --onefile --noconsole --name YukarinetteLogger --version-file version.txt main.py
+          copy config.json dist\config.json
 
-          Write-Host "=== Generate icon.ico ==="
-
-          $root = $env:GITHUB_WORKSPACE
-          Set-Location $root
-
-          $png = Join-Path $root "icon.png"
-          $ico = Join-Path $root "icon.ico"
-
-          if (!(Test-Path $png)) {
-            Write-Error "icon.png が見つかりません。"
-            exit 1
-          }
-
-          # convert_icon.py を生成
-          Set-Content convert_icon.py "from PIL import Image"
-          Add-Content convert_icon.py "import sys"
-          Add-Content convert_icon.py "png = sys.argv[1]"
-          Add-Content convert_icon.py "ico = sys.argv[2]"
-          Add-Content convert_icon.py "img = Image.open(png)"
-          Add-Content convert_icon.py "img.save(ico, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
-
-          python convert_icon.py "$png" "$ico"
-
-          if (!(Test-Path $ico)) {
-            Write-Error "icon.ico の生成に失敗しました"
-            exit 1
-          }
-
-          Write-Host "icon.ico created at $ico"
-
-          Write-Host "=== PyInstaller Build ==="
-
-          pyinstaller --onefile --noconsole --name "YukarinetteLogger" --icon "$ico" --hidden-import websockets --hidden-import websockets --hidden-import websockets.client --hidden-import websockets.server --hidden-import websockets.legacy --hidden-import websockets.legacy.client --hidden-import websockets.legacy.server --hidden-import websockets.protocol --hidden-import websockets.uri  --log-level DEBUG "$root\main.py"
-
-          Write-Host "=== PyInstaller finished with exit code $LASTEXITCODE ==="
-
-          Write-Host "=== Copy config.json ==="
-          Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
-
-          Write-Host "=== Create ZIP ==="
+      - name: Create ZIP
+        run: |
           Compress-Archive -Path dist\YukarinetteLogger.exe, dist\config.json -DestinationPath dist\YukarinetteLogger.zip
-
-          Write-Host "=== List dist directory ==="
-          Get-ChildItem dist -Recurse
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
