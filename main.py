@@ -121,7 +121,7 @@ def read_registry_value():
 
 
 # ==============================
-# MessageID ベースのログ確定処理
+# MsgID ベースのログ確定処理
 # ==============================
 LOG_DIR = os.path.join(PROGRAM_DIR, config.get("LOG_DIR", "log"))
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -146,9 +146,9 @@ class MessageBuffer:
             logging.error(f"JSON decode error: {raw_data}")
             return
 
-        msg_id = data.get("MessageID")
+        msg_id = data.get("MsgID")
         if msg_id is None:
-            logging.warning("MessageID が存在しないデータを受信")
+            logging.warning("MsgID が存在しないデータを受信")
             return
 
         async with self.lock:
@@ -185,10 +185,12 @@ class MessageBuffer:
 
         timestamp = datetime.now().strftime("%Y%m%d-%H:%M:%S%f")[:-3]
 
-        ja = self.last_data.get("textList", {}).get("ja", "")
-        en = self.last_data.get("textList", {}).get("en", "")
+        lang1 = self.last_data.get("Lang1", "")
+        lang2 = self.last_data.get("Lang2", "")
+        text1 = self.last_data.get("Text1", "")
+        text2 = self.last_data.get("Text2", "")
 
-        line = f"{timestamp} ja:{ja},en:{en}"
+        line = f"{timestamp},{lang1}:{text1},{lang2}:{text2}"
 
         log_path = os.path.join(LOG_DIR, "message.log")
         try:
