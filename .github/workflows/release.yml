@@ -83,24 +83,24 @@ jobs:
           $png = Join-Path $root "icon.png"
           $ico = Join-Path $root "icon.ico"
 
-          if (!(Test-Path $png)) {
-            Write-Error "icon.png が見つかりません。リポジトリのルートに icon.png を置いてください。"
-            exit 1
-          }
-
-          # PNG → ICO 変換（Windows / PowerShell でも安全な形）
           python -c "from PIL import Image; img = Image.open(r'$png'); img.save(r'$ico', sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])"
 
-          Write-Host "icon.ico created at $ico"
-
-          Write-Host "=== PyInstaller Build ==="
+          Write-Host "=== Generate spec file ==="
 
           pyinstaller `
             --onefile `
             --noconsole `
-            --name "YukarinetteLogger" `
             --icon "$ico" `
+            --name "YukarinetteLogger" `
+            --specpath "$root" `
+            --log-level WARN `
+            --clean `
+            --noconfirm `
             "$root\main.py"
+
+          Write-Host "=== Build using generated spec ==="
+
+          pyinstaller "$root\YukarinetteLogger.spec" --clean --noconfirm
 
           Write-Host "=== Copy config.json ==="
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
