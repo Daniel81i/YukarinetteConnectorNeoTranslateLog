@@ -129,6 +129,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: YukarinetteLogger
+            Write-Host "=== List dist directory ==="
+            Get-ChildItem dist -Recurse
           path: dist\YukarinetteLogger.zip
 
   release:
