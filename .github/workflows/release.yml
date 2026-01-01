@@ -64,14 +64,23 @@ jobs:
           Add-Content version.txt ")"
 
       - name: Build EXE
+        shell: pwsh
         run: |
-          echo "=== Generate icon.ico ==="
-          python -c "from PIL import Image; import os; root = os.environ.get('GITHUB_WORKSPACE', os.getcwd()); png_path = os.path.join(root, 'icon.png'); ico_path = os.path.join(root, 'icon.ico'); print('PNG:', png_path); print('ICO:', ico_path); img = Image.open(png_path); img.save(ico_path, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)]); print('icon.ico created')"
+          Write-Host "=== Generate icon.ico ==="
+          $root = $env:GITHUB_WORKSPACE
+          $png  = Join-Path $root "icon.png"
+          $ico  = Join-Path $root "icon.ico"
 
-          echo "=== PyInstaller Build ==="
-          pyinstaller --onefile --noconsole --name YukarinetteLogger --icon "$env:GITHUB_WORKSPACE\icon.ico" --version-file version.txt main.py
+          python -c "from PIL import Image; import os; img=Image.open(os.environ['PNG']); img.save(os.environ['ICO'], sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)])" `
+            --% PNG="$png" ICO="$ico"
 
-          copy config.json dist\config.json
+          Write-Host "icon.ico created at $ico"
+
+          Write-Host "=== PyInstaller Build ==="
+          cd $env:GITHUB_WORKSPACE
+          pyinstaller YukarinetteLogger.spec
+
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\config.json" -Destination "$env:GITHUB_WORKSPACE\dist\config.json" -Force
 
       - name: Create ZIP
         run: |
