@@ -82,11 +82,17 @@ jobs:
           Write-Host "icon.ico created at $ico"
 
           Write-Host "=== PyInstaller Build ==="
-          pyinstaller --onefile --noconsole --name YukarinetteLogger --icon "$ico" --version-file version.txt main.py
+
+          pyinstaller `
+            --onefile `
+            --noconsole `
+            --name "YukarinetteLogger" `
+            --icon "$ico" `
+            "$root\main.py"
 
           Write-Host "=== Copy config.json ==="
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
-
+  
       - name: Create ZIP
         run: |
           Compress-Archive -Path dist\YukarinetteLogger.exe, dist\config.json -DestinationPath dist\YukarinetteLogger.zip
