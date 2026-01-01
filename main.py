@@ -16,6 +16,7 @@ import psutil
 
 tray_icon = None
 ws = None
+main_loop = None
 
 # ==============================
 # 実行ファイルのあるディレクトリ取得
@@ -282,11 +283,20 @@ def create_icon_image():
     return img
 
 def on_exit(icon, item):
-
-    # WebSocket を閉じる（非同期タスクとして実行）
-    loop = asyncio.get_event_loop()
-    loop.create_task(safe_exit("user exit", 0))
+    logging.info("Tray exit clicked.")
     icon.stop()
+
+    global main_loop
+    try:
+        if main_loop is not None and main_loop.is_running():
+            asyncio.run_coroutine_threadsafe(
+                safe_exit("user exit", 0), main_loop
+            )
+        else:
+            os._exit(0)
+    except Exception as e:
+        logging.error(f"Error on tray exit: {e}")
+        os._exit(1)
 
 def run_tray():
     global tray_icon
@@ -380,10 +390,16 @@ async def main_async():
             pass
 
 def main():
+    global main_loop
     tray_thread = threading.Thread(target=run_tray, daemon=True)
     tray_thread.start()
 
-    asyncio.run(main_async())
+    main_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(main_loop)
+    try:
+        main_loop.run_until_complete(main_async())
+    finally:
+        main_loop.close()
 
 
 if __name__ == "__main__":
