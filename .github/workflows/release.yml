@@ -21,6 +21,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cleanup build environment
+        shell: pwsh
+        run: |
+          pip cache purge
+          Remove-Item build -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item dist -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item *.spec -Force -ErrorAction SilentlyContinue
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
