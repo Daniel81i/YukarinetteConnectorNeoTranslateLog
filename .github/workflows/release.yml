@@ -114,13 +114,15 @@ jobs:
           Write-Host "=== PyInstaller Build ==="
 
           pyinstaller `
-            --onefile `
-            --noconsole `
-            --name "YukarinetteLogger" `
-            --icon "$ico" `
-            "$root\main.py"
+          --onefile `
+          --noconsole `
+          --name "YukarinetteLogger" `
+          --icon "$ico" `
+          "$root\main.py" `
+          --log-level DEBUG
 
-          Write-Host "=== Copy config.json ==="
+          Write-Host "=== PyInstaller finished with exit code $LASTEXITCODE ==="
+
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
 
       - name: Upload artifact
