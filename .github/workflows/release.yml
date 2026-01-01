@@ -101,7 +101,7 @@ jobs:
 
           Write-Host "=== PyInstaller Build ==="
 
-          pyinstaller --onefile --noconsole --name "YukarinetteLogger" --icon "$ico" --hidden-import websockets "$root\main.py" --log-level DEBUG
+          pyinstaller --onefile --noconsole --name "YukarinetteLogger" --icon "$ico" --hidden-import --hidden-import websockets --hidden-import websockets.client --hidden-import websockets.server --hidden-import websockets.legacy --hidden-import websockets.legacy.client --hidden-import websockets.legacy.server --hidden-import websockets.protocol --hidden-import websockets.uri websockets "$root\main.py" --log-level DEBUG
 
           Write-Host "=== PyInstaller finished with exit code $LASTEXITCODE ==="
 
