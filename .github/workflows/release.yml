@@ -66,26 +66,10 @@ jobs:
       - name: Build EXE
         run: |
           echo "=== Generate icon.ico ==="
-          python - << 'EOF'
-from PIL import Image
-import os
-
-# GitHub Actions のワークスペースパス
-root = os.getcwd()
-png_path = os.path.join(root, "icon.png")
-ico_path = os.path.join(root, "icon.ico")
-
-print(f"PNG: {png_path}")
-print(f"ICO: {ico_path}")
-
-img = Image.open(png_path)
-img.save(ico_path, sizes=[(256,256), (128,128), (64,64), (32,32), (16,16)])
-
-print("icon.ico created")
-EOF
+          python -c "from PIL import Image; import os; root = os.getcwd(); png_path = os.path.join(root, 'icon.png'); ico_path = os.path.join(root, 'icon.ico'); print('PNG:', png_path); print('ICO:', ico_path); img = Image.open(png_path); img.save(ico_path, sizes=[(256,256),(128,128),(64,64),(32,32),(16,16)]); print('icon.ico created')"
 
           echo "=== PyInstaller Build ==="
-          pyinstaller --onefile --noconsole --name YukarinetteLogger --icon "%CD%\icon.ico" --version-file version.txt main.py
+          pyinstaller --onefile --noconsole --name YukarinetteLogger --icon icon.ico --version-file version.txt main.py
 
           copy config.json dist\config.json
 
