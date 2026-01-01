@@ -63,6 +63,15 @@ jobs:
           Add-Content version.txt "  ]"
           Add-Content version.txt ")"
 
+      - name: Remove auto-generated spec
+        shell: pwsh
+        run: |
+          $spec = Join-Path $env:GITHUB_WORKSPACE "YukarinetteLogger.spec"
+          if (Test-Path $spec) {
+            Write-Host "Deleting auto-generated spec file: $spec"
+            Remove-Item $spec -Force
+          }
+
       - name: Build EXE
         shell: pwsh
         run: |
