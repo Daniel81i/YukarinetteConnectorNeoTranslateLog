@@ -3,3 +3,4 @@ pillow
 win10toast
 websockets
 psutil
+PIL
