@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller
+          pip install pyinstaller pillow
 
       - name: Generate version file
         shell: pwsh
@@ -63,21 +63,9 @@ jobs:
           Add-Content version.txt "  ]"
           Add-Content version.txt ")"
 
-      - name: Remove auto-generated spec
-        shell: pwsh
-        run: |
-          $spec = Join-Path $env:GITHUB_WORKSPACE "YukarinetteLogger.spec"
-          if (Test-Path $spec) {
-            Write-Host "Deleting auto-generated spec file: $spec"
-            Remove-Item $spec -Force
-          }
-
       - name: Build EXE
         shell: pwsh
         run: |
-          Write-Host "=== Ensure Pillow Installed ==="
-          pip install pillow
-
           Write-Host "=== Remove auto-generated spec ==="
           Remove-Item *.spec -Force -ErrorAction SilentlyContinue
 
@@ -94,7 +82,7 @@ jobs:
             exit 1
           }
 
-          # convert_icon.py を安全に生成
+          # convert_icon.py を生成
           Set-Content convert_icon.py "from PIL import Image"
           Add-Content convert_icon.py "import sys"
           Add-Content convert_icon.py "png = sys.argv[1]"
@@ -114,23 +102,28 @@ jobs:
           Write-Host "=== PyInstaller Build ==="
 
           pyinstaller `
-          --onefile `
-          --noconsole `
-          --name "YukarinetteLogger" `
-          --icon "$ico" `
-          "$root\main.py" `
-          --log-level DEBUG
+            --onefile `
+            --noconsole `
+            --name "YukarinetteLogger" `
+            --icon "$ico" `
+            "$root\main.py" `
+            --log-level DEBUG
 
           Write-Host "=== PyInstaller finished with exit code $LASTEXITCODE ==="
 
+          Write-Host "=== Copy config.json ==="
           Copy-Item -Path "$root\config.json" -Destination "$root\dist\config.json" -Force
+
+          Write-Host "=== Create ZIP ==="
+          Compress-Archive -Path dist\YukarinetteLogger.exe, dist\config.json -DestinationPath dist\YukarinetteLogger.zip
+
+          Write-Host "=== List dist directory ==="
+          Get-ChildItem dist -Recurse
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: YukarinetteLogger
-            Write-Host "=== List dist directory ==="
-            Get-ChildItem dist -Recurse
           path: dist\YukarinetteLogger.zip
 
   release:
