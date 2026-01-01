@@ -1,6 +1,6 @@
 pystray
 pillow
 win10toast
-websockets
+websockets=10.4
 psutil
 PIL
