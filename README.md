@@ -1,5 +1,12 @@
 # YukarinetteLogger
 
+<p align="center">
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="license">
+  </a>
+  <img src="https://img.shields.io/badge/python-3.12.x-blue?logo=python&logoColor=edb641" alt="python">
+</p>
+
 YukarinetteLogger は、ゆかりねっとコネクター Neo から送られてくる **翻訳テキスト（ja/en）を WebSocket 経由で受信し、ログとして保存する常駐アプリ**です。タスクトレイに常駐し、WebSocket の接続状態をリアルタイムに表示します。翻訳ログを後から確認したい配信者・実況者向けの補助ツールです。
 
 ---
