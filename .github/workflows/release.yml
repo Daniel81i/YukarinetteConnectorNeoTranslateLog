@@ -73,7 +73,7 @@ jobs:
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --noconsole --name YukarinetteLogger --version-file version.txt --icon icon.ico main.py
+          pyinstaller --onefile --noconsole --name YukarinetteLogger --version-file version.txt --icon icon.ico --add-data "icon.ico;." main.py
           copy config.json dist\config.json
 
       - name: Create ZIP
