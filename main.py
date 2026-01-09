@@ -37,6 +37,16 @@ def get_program_dir():
 
 PROGRAM_DIR = get_program_dir()
 
+def resource_path(filename: str) -> str:
+    """
+    PyInstaller(onefile) で展開された一時ディレクトリ(sys._MEIPASS) か、
+    通常実行時は PROGRAM_DIR からリソースファイルのパスを返す。
+    """
+    if getattr(sys, "_MEIPASS", None):
+        base_dir = sys._MEIPASS  # type: ignore[attr-defined]
+    else:
+        base_dir = PROGRAM_DIR
+    return os.path.join(base_dir, filename)
 
 # ==============================
 # config.json 読み込み
@@ -286,10 +296,28 @@ async def close_websocket():
 # タスクトレイ
 # ==============================
 def create_icon_image():
-    icon_path = os.path.join(PROGRAM_DIR, "icon.png")
-    img = Image.open(icon_path)
-    img = img.resize((16, 16), Image.LANCZOS)
-    return img
+    """
+    タスクトレイ用のアイコン画像を作成する。
+    - 優先: PyInstaller --add-data で同梱した icon.ico
+    - 失敗した場合は簡易なプレースホルダー画像を返す
+    """
+    try:
+        # PyInstaller の --add-data "icon.ico;." で展開された icon.ico を想定
+        icon_path = resource_path("icon.ico")
+        img = Image.open(icon_path)
+
+        # ICO には複数サイズが含まれている場合があるので、念のため 16x16 に揃える
+        img = img.resize((16, 16), Image.LANCZOS)
+        return img
+    except Exception as e:
+        logging.warning(f"Tray icon load failed, using fallback icon: {e}")
+
+        # フォールバック: 16x16 のシンプルなアイコンを自前生成
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle((2, 2, 13, 13), fill=(255, 255, 255, 255))
+        draw.rectangle((4, 4, 11, 11), fill=(0, 0, 0, 255))
+        return img
 
 def on_exit(icon, item):
     logging.info("Tray exit clicked.")
