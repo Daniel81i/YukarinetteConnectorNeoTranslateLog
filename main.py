@@ -34,7 +34,6 @@ def get_program_dir():
     else:
         return os.path.dirname(os.path.abspath(__file__))
 
-
 PROGRAM_DIR = get_program_dir()
 
 def resource_path(filename: str) -> str:
@@ -137,11 +136,11 @@ def read_registry_value():
         logging.error(f"Registry read error: {e}")
         return None
 
-    REGISTRY_PORT_VALUE = read_registry_value()
-    if REGISTRY_PORT_VALUE is not None:
-        REGISTRY_PORT_TEXT = str(REGISTRY_PORT_VALUE)
-    else:
-        REGISTRY_PORT_TEXT = None
+REGISTRY_PORT_VALUE = read_registry_value()
+if REGISTRY_PORT_VALUE is not None:
+    REGISTRY_PORT_TEXT = str(REGISTRY_PORT_VALUE)
+else:
+    REGISTRY_PORT_TEXT = None
 
 
 # ==============================
