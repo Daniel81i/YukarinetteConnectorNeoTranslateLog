@@ -56,7 +56,6 @@ def load_config():
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 config = load_config()
 
 
@@ -64,6 +63,7 @@ config = load_config()
 # ログ設定
 # ==============================
 log_level = logging.DEBUG if config.get("DEBUG", False) else logging.INFO
+
 
 # ==============================
 # exe 名からログファイル名を決定
@@ -77,6 +77,7 @@ def get_exe_name():
         return os.path.splitext(os.path.basename(__file__))[0]
 
 APP_NAME = get_exe_name()
+
 
 # ==============================
 # タイムスタンプ付きログファイル名
@@ -120,7 +121,6 @@ HIVE_MAP = {
     "HKCU": winreg.HKEY_CURRENT_USER,
 }
 
-
 def read_registry_value():
     hive_name = config.get("REGISTRY_HIVE", "HKEY_LOCAL_MACHINE")
     hive = HIVE_MAP.get(hive_name.upper(), winreg.HKEY_LOCAL_MACHINE)
@@ -136,6 +136,12 @@ def read_registry_value():
     except Exception as e:
         logging.error(f"Registry read error: {e}")
         return None
+
+    REGISTRY_PORT_VALUE = read_registry_value()
+    if REGISTRY_PORT_VALUE is not None:
+        REGISTRY_PORT_TEXT = str(REGISTRY_PORT_VALUE)
+    else:
+        REGISTRY_PORT_TEXT = None
 
 
 # ==============================
@@ -319,6 +325,18 @@ def create_icon_image():
         draw.rectangle((4, 4, 11, 11), fill=(0, 0, 0, 255))
         return img
 
+def format_tray_title(status_text: str) -> str:
+    """
+    タスクトレイのタイトル（ホバー時のツールチップ）を組み立てる。
+    - 1行目: プログラム名
+    - 2行目: ステータス
+    - 3行目: レジストリから取得したログ取得ポート
+    """
+    if REGISTRY_PORT_TEXT is not None:
+        return f"{APP_NAME}\nStatus: {status_text}\nLogPort: {REGISTRY_PORT_TEXT}"
+    else:
+        return f"{APP_NAME}\nStatus: {status_text}"
+
 def on_exit(icon, item):
     logging.info("Tray exit clicked.")
     icon.stop()
@@ -335,14 +353,27 @@ def on_exit(icon, item):
         logging.error(f"Error on tray exit: {e}")
         os._exit(1)
 
+def on_info(icon, item):
+    """
+    Info メニュー: プログラム名とログ取得ポートを通知として表示
+    """
+    if REGISTRY_PORT_TEXT is not None:
+        msg = f"{APP_NAME}\nログ取得ポート: {REGISTRY_PORT_TEXT}"
+    else:
+        msg = f"{APP_NAME}\nログ取得ポート: 読み取りに失敗しました"
+
+    # 既存の notify() を利用してトースト表示
+    notify("YukarinetteLogger Info", msg)
+
 def run_tray():
     global tray_icon
     tray_icon = pystray.Icon(
         "YukarinetteLogger",
         create_icon_image(),
-        "接続待機中",
+        format_tray_title("接続待機中"),
         menu=pystray.Menu(
-            pystray.MenuItem("Exit（終了）", on_exit)
+            pystray.MenuItem("Info", on_info),
+            pystray.MenuItem("Exit（終了）", on_exit),
         ),
     )
     tray_icon.run()
@@ -350,7 +381,7 @@ def run_tray():
 def update_tray_status(text):
     global tray_icon
     if tray_icon:
-        tray_icon.title = f"{APP_NAME}\n{text}"
+        tray_icon.title = format_tray_title(text)
 
 
 # ==============================
