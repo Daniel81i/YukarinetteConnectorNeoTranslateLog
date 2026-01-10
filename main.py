@@ -173,7 +173,7 @@ class MessageBuffer:
 
         msg_id = data.get("MsgID")
         if msg_id is None:
-            logging.warning("MsgID が存在しないデータを受信")
+            logging.warning("Message Error No MsgID")
             return
 
         async with self.lock:
@@ -228,6 +228,7 @@ class MessageBuffer:
         self.current_id = None
         self.last_data = None
         self.last_update_time = None
+
 message_buffer = MessageBuffer(
     stable_sec=config.get("PROCESS_STABLE_SEC", 10),
     flush_interval=config.get("FLUSH_INTERVAL_SEC", 5)
@@ -241,7 +242,8 @@ WS_RECONNECT_DELAY_SEC = config.get("WS_RECONNECT_DELAY_SEC", 5)
 WS_MAX_RECONNECT_SEC = config.get("WS_MAX_RECONNECT_SEC", 60)
 
 async def websocket_loop(url: str):
-    notify("起動", "アプリケーションを起動しました")
+    # 起動完了
+    notify("OK", "Ready")
     global ws
 
     # URL からポート番号を抽出
@@ -250,21 +252,21 @@ async def websocket_loop(url: str):
     except:
         port = "?"
 
-    update_tray_status(f"接続待機中 (Port: {port})")
+    update_tray_status(f"Wating (Port: {port})")
 
     start_retry_time = None
 
     while True:
         try:
             logging.info(f"Connecting WebSocket: {url}")
-            update_tray_status(f"接続中… (Port: {port})")
+            update_tray_status(f"Connecting… (Port: {port})")
 
             async with websockets.connect(url) as ws_local:
                 ws = ws_local
-                notify("データ受信準備完了", "WebSocket 接続が確立しました")
+                notify("Ready", "WebSocket Connection OK")
                 logging.info("WebSocket connected")
 
-                update_tray_status(f"受信中 (Port: {port})")
+                update_tray_status(f"OK (Port: {port})")
 
                 start_retry_time = None
 
@@ -276,14 +278,14 @@ async def websocket_loop(url: str):
 
         except Exception as e:
             logging.error(f"WebSocket error/disconnected: {e}")
-            update_tray_status(f"再接続中… (Port: {port})")
+            update_tray_status(f"Re Connecting… (Port: {port})")
 
             if start_retry_time is None:
                 start_retry_time = time.time()
 
             elapsed = time.time() - start_retry_time
             if elapsed >= WS_MAX_RECONNECT_SEC:
-                update_tray_status("切断")
+                update_tray_status("Disconnected")
 
             await asyncio.sleep(WS_RECONNECT_DELAY_SEC)
 
@@ -332,7 +334,7 @@ def format_tray_title(status_text: str) -> str:
     - 3行目: レジストリから取得したログ取得ポート
     """
     if REGISTRY_PORT_TEXT is not None:
-        return f"{APP_NAME}\nStatus: {status_text}\nLogPort: {REGISTRY_PORT_TEXT}"
+        return f"{APP_NAME}\nStatus: {status_text}\nゆかコネWebSocketPort: {REGISTRY_PORT_TEXT}"
     else:
         return f"{APP_NAME}\nStatus: {status_text}"
 
@@ -357,9 +359,9 @@ def on_info(icon, item):
     Info メニュー: プログラム名とログ取得ポートを通知として表示
     """
     if REGISTRY_PORT_TEXT is not None:
-        msg = f"{APP_NAME}\nログ取得ポート: {REGISTRY_PORT_TEXT}"
+        msg = f"{APP_NAME}\nゆかコネWebSocketPort: {REGISTRY_PORT_TEXT}"
     else:
-        msg = f"{APP_NAME}\nログ取得ポート: 読み取りに失敗しました"
+        msg = f"{APP_NAME}\nゆかコネWebSocketPort: Error"
 
     # 既存の notify() を利用してトースト表示
     notify("YukarinetteLogger Info", msg)
@@ -369,10 +371,10 @@ def run_tray():
     tray_icon = pystray.Icon(
         "YukarinetteLogger",
         create_icon_image(),
-        format_tray_title("接続待機中"),
+        format_tray_title("Waiting"),
         menu=pystray.Menu(
             pystray.MenuItem("Info", on_info),
-            pystray.MenuItem("Exit（終了）", on_exit),
+            pystray.MenuItem("Exit", on_exit),
         ),
     )
     tray_icon.run()
@@ -421,7 +423,7 @@ async def safe_exit(reason: str, code: int = 0):
     async with message_buffer.lock:
         await message_buffer._flush_locked()
 
-    notify("終了", f"アプリケーションを終了します ({reason})")
+    notify("Terminated", f"Exit Sttus: ({reason})")
 
     os._exit(code)
 
@@ -433,7 +435,7 @@ async def main_async():
     value = read_registry_value()
 
     if value is None:
-        notify("終了", "レジストリから WebSocket の値を取得できませんでした")
+        notify("Terminated", "WebSocket Read Error")
         return
 
     if isinstance(value, int):
